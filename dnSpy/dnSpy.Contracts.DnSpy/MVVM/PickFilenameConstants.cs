@@ -33,6 +33,7 @@ namespace dnSpy.Contracts.MVVM {
 		public static readonly string NetModuleFilter = $"{dnSpy_Contracts_DnSpy_Resources.Files_DotNetNetModules} (*.netmodule)|*.netmodule|{dnSpy_Contracts_DnSpy_Resources.AllFiles} (*.*)|*.*";
 		public static readonly string ExecutableFilter = $"{dnSpy_Contracts_DnSpy_Resources.Files_Executables} (*.exe)|*.exe|{dnSpy_Contracts_DnSpy_Resources.AllFiles} (*.*)|*.*";
 		public static readonly string XmlFilenameFilter = $"{dnSpy_Contracts_DnSpy_Resources.Files_XmlFiles} (*.xml)|*.xml|{dnSpy_Contracts_DnSpy_Resources.AllFiles} (*.*)|*.*";
+		public static readonly string DumpFilenameFilter = $"{dnSpy_Contracts_DnSpy_Resources.Files_DumpFiles} (*.dmp)|*.dmp|{dnSpy_Contracts_DnSpy_Resources.AllFiles} (*.*)|*.*";
 #pragma warning restore 1591 // Missing XML comment for publicly visible type or member
 	}
 }

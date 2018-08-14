@@ -150,4 +150,24 @@ namespace dndbg.Engine {
 
 		public DebugProcessOptions Clone() => CopyTo(new DebugProcessOptions(CLRTypeDebugInfo));
 	}
+	sealed class LoadDumpOptions {
+		/// <summary>
+		/// TODO //File to debug
+		/// </summary>
+		public string Filename { get; set; }
+
+		/// <summary>
+		/// An <see cref="IDebugMessageDispatcher"/> instance. Can't be null.
+		/// </summary>
+		public IDebugMessageDispatcher DebugMessageDispatcher { get; set; }
+
+		/// <summary>
+		/// Debug options
+		/// </summary>
+		public DebugOptions DebugOptions { get; set; }
+
+		public LoadDumpOptions() {
+			DebugOptions = new DebugOptions();
+		}
+	}
 }

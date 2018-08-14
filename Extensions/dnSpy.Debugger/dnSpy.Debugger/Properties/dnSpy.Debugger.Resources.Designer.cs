@@ -2314,6 +2314,15 @@ namespace dnSpy.Debugger.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to _Load Dump....
+        /// </summary>
+        public static string LoadDump {
+            get {
+                return ResourceManager.GetString("LoadDump", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Open Modules.
         /// </summary>
         public static string LoadModulesCommand {

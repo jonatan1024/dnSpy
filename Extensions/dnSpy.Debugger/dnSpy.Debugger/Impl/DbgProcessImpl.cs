@@ -145,7 +145,7 @@ namespace dnSpy.Debugger.Impl {
 			const int dwDesiredAccess = NativeMethods.PROCESS_VM_OPERATION | NativeMethods.PROCESS_VM_READ |
 				NativeMethods.PROCESS_VM_WRITE | NativeMethods.PROCESS_QUERY_LIMITED_INFORMATION;
 			hProcess = NativeMethods.OpenProcess(dwDesiredAccess, false, pid);
-			if (hProcess.IsInvalid)
+			if (hProcess.IsInvalid && pid != 0)
 				throw new InvalidOperationException($"Couldn't open process {pid}");
 
 			Bitness = ProcessUtilities.GetBitness(hProcess.DangerousGetHandle());

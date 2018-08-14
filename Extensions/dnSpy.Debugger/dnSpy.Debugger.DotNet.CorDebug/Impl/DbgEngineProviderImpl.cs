@@ -46,6 +46,9 @@ namespace dnSpy.Debugger.DotNet.CorDebug.Impl {
 
 			case DotNetCoreAttachToProgramOptions _:
 				return new DotNetCoreDbgEngineImpl(dbgEngineImplDependencies.Value, dbgManager, DbgStartKind.Attach);
+
+			case CorDebugLoadDumpOptions _:
+				return new DotNetFrameworkDbgEngineImpl(dbgEngineImplDependencies.Value, dbgManager, DbgStartKind.LoadDump);
 			}
 
 			return null;

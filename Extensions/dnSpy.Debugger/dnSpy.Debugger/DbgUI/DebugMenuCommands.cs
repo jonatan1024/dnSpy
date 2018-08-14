@@ -151,6 +151,17 @@ namespace dnSpy.Debugger.DbgUI {
 			public override bool IsEnabled(IMenuItemContext context) => debugger.Value.CanAttachProgram;
 		}
 
+		[ExportMenuItem(OwnerGuid = MenuConstants.APP_MENU_DEBUG_GUID, Header = "res:LoadDump", Group = MenuConstants.GROUP_APP_MENU_DEBUG_START, Order = 40)]
+		sealed class LoadDumpDebugMainMenuCommand : DebugMainMenuCommand {
+			[ImportingConstructor]
+			public LoadDumpDebugMainMenuCommand(Lazy<Debugger> debugger)
+				: base(debugger, false) {
+			}
+
+			public override void Execute(IMenuItemContext context) => debugger.Value.LoadDumpFile();
+			public override bool IsVisible(IMenuItemContext context) => debugger.Value.CanDebugProgram;
+		}
+
 		[ExportMenuItem(OwnerGuid = MenuConstants.APP_MENU_DEBUG_GUID, Header = "res:StepIntoCurrentProcessCommand", Icon = DsImagesAttribute.StepInto, InputGestureText = "res:ShortCutKeyCtrlAltF11", Group = MenuConstants.GROUP_APP_MENU_DEBUG_STEP_CURRENTPROCESS, Order = 0)]
 		sealed class StepIntoCurrentProcessDebugMainMenuCommand : DebugMainMenuCommand {
 			readonly Lazy<DebuggerSettings> debuggerSettings;

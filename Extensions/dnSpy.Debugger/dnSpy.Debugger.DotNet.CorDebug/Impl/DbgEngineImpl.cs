@@ -628,12 +628,19 @@ namespace dnSpy.Debugger.DotNet.CorDebug.Impl {
 		void SendMessage(DbgEngineMessage message) => Message?.Invoke(this, message);
 
 		public override void Start(DebugProgramOptions options) => CorDebugThread(() => {
-			if (StartKind == DbgStartKind.Start)
+			switch (StartKind) {
+			case DbgStartKind.Start:
 				StartCore((CorDebugStartDebuggingOptions)options);
-			else if (StartKind == DbgStartKind.Attach)
+				break;
+			case DbgStartKind.Attach:
 				AttachCore((CorDebugAttachToProgramOptions)options);
-			else
+				break;
+			case DbgStartKind.LoadDump:
+				LoadDumpCore((CorDebugLoadDumpOptions)options);
+				break;
+			default:
 				throw new InvalidOperationException();
+			}	
 		});
 
 		protected abstract CLRTypeDebugInfo CreateDebugInfo(CorDebugStartDebuggingOptions options);
@@ -740,6 +747,37 @@ namespace dnSpy.Debugger.DotNet.CorDebug.Impl {
 				}
 				else
 					errMsg = string.Format(dnSpy_Debugger_DotNet_CorDebug_Resources.Error_CouldNotStartDebugger2, ex.Message);
+
+				SendMessage(new DbgMessageConnected(errMsg, GetMessageFlags()));
+				return;
+			}
+		}
+
+		void LoadDumpCore(CorDebugLoadDumpOptions options) {
+			debuggerThread.VerifyAccess();
+			try {
+				if (debuggerThread.HasShutdownStarted)
+					throw new InvalidOperationException("Dispatcher has shut down");
+
+				var dbgOptions = new LoadDumpOptions() {
+					DebugMessageDispatcher = debuggerThread.GetDebugMessageDispatcher(),
+					Filename = options.Filename,
+				};
+				dbgOptions.DebugOptions.DebugOptionsProvider = new DebugOptionsProviderImpl(debuggerSettings);
+
+				dnDebugger = DnDebugger.LoadDump(dbgOptions, ref clrDac, ref clrDacInitd, this);
+				
+				OnDebugProcess(dnDebugger);
+				HookDnDebuggerEvents();
+
+				dnDebugger.InvokeDumpCallbacks();
+
+				Break();
+				
+				return;
+			}
+			catch (Exception ex) {
+				string errMsg = string.Format(dnSpy_Debugger_DotNet_CorDebug_Resources.Error_CouldNotStartDebuggerCheckAccessToFile, options.Filename ?? "<???>", ex.Message);
 
 				SendMessage(new DbgMessageConnected(errMsg, GetMessageFlags()));
 				return;

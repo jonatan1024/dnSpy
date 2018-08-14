@@ -1497,4 +1497,7 @@ Are you sure you want to expand it?</value>
   <data name="CopyExpressionCommand" xml:space="preserve">
     <value>Copy E_xpression</value>
   </data>
+  <data name="LoadDump" xml:space="preserve">
+    <value>_Load Dump...</value>
+  </data>
 </root>

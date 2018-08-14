@@ -128,7 +128,8 @@ namespace dnSpy.Debugger.DotNet.CorDebug.Impl {
 			case CorDebugJITCompilerFlags.CORDEBUG_JIT_ENABLE_ENC:
 				return false;
 			default:
-				Debug.Fail($"Unknown JIT compiler flags: {dnModule.CachedJITCompilerFlags}");
+				if(dnModule.Process != null && dnModule.Process.ProcessId != 0)
+					Debug.Fail($"Unknown JIT compiler flags: {dnModule.CachedJITCompilerFlags}");
 				return null;
 			}
 		}

@@ -79,6 +79,7 @@
     <Compile Include="Code\DbgCodeLocationSerializer.cs" />
     <Compile Include="Code\PredefinedDbgCodeLocationTypes.cs" />
     <Compile Include="Code\TextEditor\DbgTextViewCodeLocationProvider.cs" />
+    <Compile Include="CorDebugLoadDumpOptions.cs" />
     <Compile Include="DbgAppDomain.cs" />
     <Compile Include="DbgCollectionChangedEventArgs.cs" />
     <Compile Include="DbgDispatcher.cs" />

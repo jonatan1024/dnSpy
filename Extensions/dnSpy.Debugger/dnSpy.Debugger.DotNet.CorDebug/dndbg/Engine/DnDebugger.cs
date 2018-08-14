@@ -29,6 +29,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using dndbg.COM.CorDebug;
 using dndbg.COM.MetaHost;
+using dnSpy.Debugger.DotNet.CorDebug.DAC;
+using Microsoft.Diagnostics.Runtime;
 
 namespace dndbg.Engine {
 	delegate void DebugCallbackEventHandler(DnDebugger dbg, DebugCallbackEventArgs e);
@@ -398,7 +400,7 @@ namespace dndbg.Engine {
 			// important that we don't access any of our fields and don't call any methods after
 			// Continue() has been called!
 			int hr = controller.Continue(0);
-			bool success = hr >= 0 || hr == CordbgErrors.CORDBG_E_PROCESS_TERMINATED || hr == CordbgErrors.CORDBG_E_OBJECT_NEUTERED;
+			bool success = hr >= 0 || hr == CordbgErrors.CORDBG_E_PROCESS_TERMINATED || hr == CordbgErrors.CORDBG_E_OBJECT_NEUTERED || hr == CordbgErrors.CORDBG_E_UNRECOVERABLE_ERROR;
 			Debug.WriteLineIf(!success, $"dndbg: ICorDebugController::Continue() failed: 0x{hr:X8}");
 			return success;
 		}
@@ -859,7 +861,7 @@ namespace dndbg.Engine {
 				process = TryGetValidProcess(cadArgs.Process);
 				appDomain = null;
 				if (process != null && cadArgs.AppDomain != null) {
-					b = cadArgs.AppDomain.Attach() >= 0;
+					b = cadArgs.AppDomain.Attach() >= 0 || process.ProcessId == 0;
 					Debug.WriteLineIf(!b, $"CreateAppDomain: could not attach to AppDomain: {cadArgs.AppDomain.GetHashCode():X8}");
 					if (b)
 						appDomain = process.TryAdd(cadArgs.AppDomain);
@@ -1081,6 +1083,83 @@ namespace dndbg.Engine {
 			if (dbg == null)
 				throw new Exception("Couldn't create a debugger instance");
 			return dbg;
+		}
+
+		public static DnDebugger LoadDump(LoadDumpOptions options, ref ClrDac clrDac, ref bool clrDacInitd, IClrDacDebugger clrDacDebugger) {
+			var debuggeeVersion = RuntimeEnvironment.GetSystemVersion();
+			var corDebug = CreateCorDebug(debuggeeVersion, out string clrPath);
+			var dbg = new DnDebugger(corDebug, options.DebugOptions, options.DebugMessageDispatcher, clrPath, null, null, isAttach: false);
+
+			dbg.LoadDumpProcesses(options, ref clrDac, ref clrDacInitd, clrDacDebugger);
+
+			return dbg;
+		}
+
+		void LoadDumpProcesses(LoadDumpOptions options, ref ClrDac clrDac, ref bool clrDacInitd, IClrDacDebugger clrDacDebugger) {
+			Type rbType = typeof(ClrRuntime).Assembly.GetType("Microsoft.Diagnostics.Runtime.RuntimeBase");
+			var prop = rbType.GetProperty("CorDebugProcess", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+			DataTarget dataTarget = DataTarget.LoadCrashDump(options.Filename);
+			foreach (ClrInfo version in dataTarget.ClrVersions) {
+				ClrRuntime runtime = version.CreateRuntime();
+				object procdebug = prop.GetValue(runtime);
+				ICorDebugProcess comProcess = procdebug as ICorDebugProcess;
+
+				var process = TryAdd(comProcess);
+				if (process != null)
+					process.Initialize(options.Filename, null, null);
+
+				if (!clrDacInitd) {
+					clrDac = new ClrDacImpl(dataTarget, runtime, clrDacDebugger);
+					clrDacInitd = true;
+				}
+			}
+		}
+
+		public void InvokeDumpCallbacks() {
+			var callback = ((ICorDebugManagedCallback)new CorDebugManagedCallback(this));
+
+			foreach (ICorDebugProcess comProcess in processes.GetAllKeys()) {
+				callback.CreateProcess(Marshal.GetIUnknownForObject(comProcess));
+
+				Thread.Sleep(1000);
+
+				comProcess.EnumerateAppDomains(out ICorDebugAppDomainEnum domainEnum);
+				while (true) {
+					domainEnum.Next(1, out ICorDebugAppDomain domain, out uint gotDomains);
+					if (gotDomains == 0)
+						break;
+
+					callback.CreateAppDomain(Marshal.GetIUnknownForObject(comProcess), Marshal.GetIUnknownForObject(domain));
+
+					domain.EnumerateAssemblies(out ICorDebugAssemblyEnum assemblyEnum);
+					while (true) {
+						assemblyEnum.Next(1, out ICorDebugAssembly assembly, out uint gotAssemblies);
+						if (gotAssemblies == 0)
+							break;
+
+						callback.LoadAssembly(Marshal.GetIUnknownForObject(domain), Marshal.GetIUnknownForObject(assembly));
+
+						assembly.EnumerateModules(out ICorDebugModuleEnum moduleEnum);
+						while (true) {
+							moduleEnum.Next(1, out ICorDebugModule module, out uint gotModules);
+							if (gotModules == 0)
+								break;
+
+							callback.LoadModule(Marshal.GetIUnknownForObject(domain), Marshal.GetIUnknownForObject(module));
+						}
+					}
+
+					comProcess.EnumerateThreads(out ICorDebugThreadEnum threadEnum);
+					while (true) {
+						threadEnum.Next(1, out ICorDebugThread thread, out uint gotThreads);
+						if (gotThreads == 0)
+							break;
+
+						callback.CreateThread(Marshal.GetIUnknownForObject(domain), Marshal.GetIUnknownForObject(thread));
+					}
+				}
+			}
 		}
 
 		static DnDebugger CreateDnDebugger(DebugProcessOptions options) {
@@ -1560,7 +1639,7 @@ namespace dndbg.Engine {
 			foreach (var process in processes.GetAll()) {
 				try {
 					int hr = process.CorProcess.RawObject.Stop(uint.MaxValue);
-					if (hr < 0)
+					if (hr < 0 && process.ProcessId != 0)
 						errorHR = hr;
 					else
 						ProcessStopped(process, callProcessStopped);
@@ -1653,7 +1732,7 @@ namespace dndbg.Engine {
 					if (hr != 0) {
 						Debug.Assert(hr == CordbgErrors.CORDBG_E_UNRECOVERABLE_ERROR || hr == CordbgErrors.CORDBG_E_PROCESS_NOT_SYNCHRONIZED);
 						bool b = NativeMethods.TerminateProcess(process.CorProcess.Handle, uint.MaxValue);
-						Debug.Assert(b);
+						Debug.Assert(b || process.CorProcess.Handle == IntPtr.Zero);
 						forceNotify = true;
 					}
 				}

@@ -76,5 +76,6 @@ namespace dnSpy.Debugger.DbgUI {
 		public abstract void StepIntoOrDebugProgram();
 		public abstract bool CanStepOverOrDebugProgram { get; }
 		public abstract void StepOverOrDebugProgram();
+		public abstract void LoadDumpFile();
 	}
 }

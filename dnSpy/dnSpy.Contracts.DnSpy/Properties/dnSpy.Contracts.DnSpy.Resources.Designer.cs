@@ -135,6 +135,15 @@ namespace dnSpy.Contracts.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Dump Files.
+        /// </summary>
+        public static string Files_DumpFiles {
+            get {
+                return ResourceManager.GetString("Files_DumpFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Executables.
         /// </summary>
         public static string Files_Executables {

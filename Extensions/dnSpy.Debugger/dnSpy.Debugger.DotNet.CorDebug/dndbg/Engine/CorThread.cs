@@ -46,6 +46,8 @@ namespace dndbg.Engine {
 
 		public int VolatileThreadId {
 			get {
+				if(Process?.ProcessId == 0)
+					return ThreadId;
 				var th2 = obj as ICorDebugThread2;
 				if (th2 == null)
 					return -1;

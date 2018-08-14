@@ -192,5 +192,10 @@ namespace dnSpy.Contracts.Debugger.Engine {
 		/// The debugger attached to the program after it was started by someone else
 		/// </summary>
 		Attach,
+
+		/// <summary>
+		/// TODO
+		/// </summary>
+		LoadDump,
 	}
 }

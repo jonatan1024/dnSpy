@@ -78,5 +78,11 @@ namespace dndbg.Engine {
 		/// </summary>
 		/// <returns></returns>
 		public TValue[] GetAll() => dict.Values.ToArray();
+
+		/// <summary>
+		/// Gets all keys
+		/// </summary>
+		/// <returns></returns>
+		public TKey[] GetAllKeys() => dict.Keys.ToArray();
 	}
 }

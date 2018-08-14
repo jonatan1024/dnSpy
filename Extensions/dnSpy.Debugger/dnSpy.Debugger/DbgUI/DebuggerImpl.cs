@@ -37,6 +37,7 @@ using dnSpy.Contracts.Debugger.Code;
 using dnSpy.Contracts.Debugger.Steppers;
 using dnSpy.Contracts.Documents;
 using dnSpy.Contracts.Documents.Tabs;
+using dnSpy.Contracts.MVVM;
 using dnSpy.Debugger.Breakpoints.Code.TextEditor;
 using dnSpy.Debugger.Code.TextEditor;
 using dnSpy.Debugger.Exceptions;
@@ -52,6 +53,7 @@ namespace dnSpy.Debugger.DbgUI {
 		readonly Lazy<IMessageBoxService> messageBoxService;
 		readonly Lazy<IAppWindow> appWindow;
 		readonly Lazy<IDocumentTabService> documentTabService;
+		readonly Lazy<IPickFilename> pickFilename;
 		readonly Lazy<DbgManager> dbgManager;
 		readonly Lazy<StartDebuggingOptionsProvider> startDebuggingOptionsProvider;
 		readonly Lazy<ShowAttachToProcessDialog> showAttachToProcessDialog;
@@ -66,11 +68,12 @@ namespace dnSpy.Debugger.DbgUI {
 		public override bool IsDebugging => dbgManager.Value.IsDebugging;
 
 		[ImportingConstructor]
-		DebuggerImpl(UIDispatcher uiDispatcher, Lazy<IMessageBoxService> messageBoxService, Lazy<IAppWindow> appWindow, Lazy<IDocumentTabService> documentTabService, Lazy<DbgManager> dbgManager, Lazy<StartDebuggingOptionsProvider> startDebuggingOptionsProvider, Lazy<ShowAttachToProcessDialog> showAttachToProcessDialog, Lazy<TextViewBreakpointService> textViewBreakpointService, Lazy<DbgCodeBreakpointsService> dbgCodeBreakpointsService, Lazy<DbgCallStackService> dbgCallStackService, Lazy<ReferenceNavigatorService> referenceNavigatorService, Lazy<DbgTextViewCodeLocationService> dbgTextViewCodeLocationService, Lazy<DbgExceptionFormatterService> dbgExceptionFormatterService, DebuggerSettings debuggerSettings) {
+		DebuggerImpl(UIDispatcher uiDispatcher, Lazy<IMessageBoxService> messageBoxService, Lazy<IAppWindow> appWindow, Lazy<IDocumentTabService> documentTabService, Lazy<IPickFilename> pickFilename, Lazy<DbgManager> dbgManager, Lazy<StartDebuggingOptionsProvider> startDebuggingOptionsProvider, Lazy<ShowAttachToProcessDialog> showAttachToProcessDialog, Lazy<TextViewBreakpointService> textViewBreakpointService, Lazy<DbgCodeBreakpointsService> dbgCodeBreakpointsService, Lazy<DbgCallStackService> dbgCallStackService, Lazy<ReferenceNavigatorService> referenceNavigatorService, Lazy<DbgTextViewCodeLocationService> dbgTextViewCodeLocationService, Lazy<DbgExceptionFormatterService> dbgExceptionFormatterService, DebuggerSettings debuggerSettings) {
 			this.uiDispatcher = uiDispatcher;
 			this.messageBoxService = messageBoxService;
 			this.appWindow = appWindow;
 			this.documentTabService = documentTabService;
+			this.pickFilename = pickFilename;
 			this.dbgManager = dbgManager;
 			this.startDebuggingOptionsProvider = startDebuggingOptionsProvider;
 			this.showAttachToProcessDialog = showAttachToProcessDialog;
@@ -333,6 +336,16 @@ namespace dnSpy.Debugger.DbgUI {
 				StepOver();
 			else if (CanDebugProgram && !dbgManager.Value.IsDebugging)
 				DebugProgram(pauseAtEntryPoint: true);
+		}
+
+		public override void LoadDumpFile() {
+			string filename = pickFilename.Value.GetFilename(string.Empty, "dmp", PickFilenameConstants.DumpFilenameFilter);
+			if (filename == null)
+				return;
+			var options = new CorDebugLoadDumpOptions() {
+				Filename = filename
+			};
+			dbgManager.Value.Start(options);
 		}
 
 		void IDbgManagerStartListener.OnStart(DbgManager dbgManager) {

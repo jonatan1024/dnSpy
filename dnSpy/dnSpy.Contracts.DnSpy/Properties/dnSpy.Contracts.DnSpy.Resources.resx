@@ -155,6 +155,9 @@
   <data name="Files_XmlFiles" xml:space="preserve">
     <value>XML Files</value>
   </data>
+  <data name="Files_DumpFiles" xml:space="preserve">
+    <value>Dump Files</value>
+  </data>
   <data name="InvalidGuid" xml:space="preserve">
     <value>Invalid GUID</value>
   </data>
